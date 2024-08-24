@@ -1,10 +1,85 @@
 <template>
   <Header />
 
-  <div class="hero px-2 pt-10">
-    <div class="container mx-auto">
-      <div class="max-w-xl mx-auto">
-        <div role="alert" class="alert alert-warning mb-4">
+  <div class="px-2 pt-10">
+    <div class="max-w-xl mx-auto">
+      <div role="alert" class="alert alert-warning mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <span
+          >Warning: We detect Indian products by identifying barcodes that start
+          with 890. A barcode with this prefix indicates the number was
+          originally issued by the Indian branch of GS1.</span
+        >
+      </div>
+
+      <p class="mb-4 text-justify">
+        The buttons below are designed to assist you in detecting Indian
+        products quickly and efficiently. Our barcode scanner supports multiple
+        barcode formats commonly used for retail products. Simply use the
+        scanner to identify products by their barcode, and you'll be able to
+        determine if they are from India. Supported Barcode Formats:
+        {{ selectedBarcodeFormats }}.
+      </p>
+
+      <div class="md:flex justify-center gap-2">
+        <button
+          @click="toggleCamera"
+          class="btn btn-info text-white mb-2 w-full md:w-auto"
+        >
+          Detect by Camera
+        </button>
+        <button
+          @click="toggleGallery"
+          class="btn btn-success text-white mb-2 w-full md:w-auto"
+        >
+          Detect from Image
+        </button>
+      </div>
+
+      <div class="mt-16">
+        <div v-if="isCameraOn">
+          <label for="" class="font-bold">Scan Barcode:</label>
+          <p class="text-gray-500">Scan a barcode to detect the product.</p>
+
+          <QrcodeStream
+            :constraints="selectedConstraints"
+            :track="trackFunctionSelected.value"
+            :formats="selectedBarcodeFormats"
+            @error="onError"
+            @detect="onDetect"
+            @camera-on="onCameraReady"
+            class="rounded-lg overflow-hidden"
+          />
+        </div>
+
+        <div v-if="isGalleryOn">
+          <label for="" class="font-bold">Upload Image:</label>
+          <p class="text-gray-500">Upload an image to detect the barcode.</p>
+
+          <QrcodeCapture
+            :constraints="selectedConstraints"
+            :track="trackFunctionSelected.value"
+            :formats="selectedBarcodeFormats"
+            @error="onError"
+            @detect="onDetect"
+            @camera-on="onCameraReady"
+            class="file-input file-input-bordered w-full"
+          />
+        </div>
+
+        <div role="alert" class="alert alert-success mt-4" v-if="responseMsg">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-6 w-6 shrink-0 stroke-current"
@@ -15,100 +90,30 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span
-            >Warning: We detect Indian products by identifying barcodes that
-            start with 890. A barcode with this prefix indicates the number was
-            originally issued by the Indian branch of GS1.</span
+          <span>{{ responseMsg }}</span>
+        </div>
+
+        <div role="alert" class="alert alert-error mt-4" v-if="errorMsg">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
           >
-        </div>
-
-        <p class="mb-4 text-justify">
-          The buttons below are designed to assist you in detecting Indian
-          products quickly and efficiently. Our barcode scanner supports
-          multiple barcode formats commonly used for retail products. Simply use
-          the scanner to identify products by their barcode, and you'll be able
-          to determine if they are from India. Supported Barcode Formats:
-          {{ selectedBarcodeFormats }}.
-        </p>
-
-        <div class="md:flex justify-center gap-2">
-          <button @click="toggleCamera" class="btn btn-info text-white mb-2 w-full md:w-auto">
-            Detect by Camera
-          </button>
-          <button @click="toggleGallery" class="btn btn-success text-white mb-2 w-full md:w-auto">
-            Detect from Image
-          </button>
-        </div>
-
-        <div class="mt-16">
-          <div v-if="isCameraOn">
-            <label for="" class="font-bold">Scan Barcode:</label>
-            <p class="text-gray-500">Scan a barcode to detect the product.</p>
-
-            <QrcodeStream
-              :constraints="selectedConstraints"
-              :track="trackFunctionSelected.value"
-              :formats="selectedBarcodeFormats"
-              @error="onError"
-              @detect="onDetect"
-              @camera-on="onCameraReady"
-              class="rounded-lg overflow-hidden"
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
-          </div>
-
-          <div v-if="isGalleryOn">
-            <label for="" class="font-bold">Upload Image:</label>
-            <p class="text-gray-500">Upload an image to detect the barcode.</p>
-
-            <QrcodeCapture
-              :constraints="selectedConstraints"
-              :track="trackFunctionSelected.value"
-              :formats="selectedBarcodeFormats"
-              @error="onError"
-              @detect="onDetect"
-              @camera-on="onCameraReady"
-              class="file-input file-input-bordered w-full"
-            />
-          </div>
-
-          <div role="alert" class="alert alert-success mt-4" v-if="responseMsg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 shrink-0 stroke-current"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{{ responseMsg }}</span>
-          </div>
-
-          <div role="alert" class="alert alert-error mt-4" v-if="errorMsg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 shrink-0 stroke-current"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{{ errorMsg }}</span>
-          </div>
+          </svg>
+          <span>{{ errorMsg }}</span>
         </div>
       </div>
+      <div class="mt-16"></div>
     </div>
   </div>
 </template>
@@ -117,7 +122,7 @@
 import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from "vue-qrcode-reader";
 import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
-import { ref, onMounted, computed } from "vue";
+import { ref, nextTick, computed } from "vue";
 import Header from "../components/Header.vue";
 
 const isCameraOn = ref(false);
@@ -131,15 +136,34 @@ const notify = (message, type) => {
   });
 };
 
-const toggleCamera = () => {
+const toggleCamera = async () => {
   isCameraOn.value = true;
   isGalleryOn.value = false;
+
+  responseMsg.value = "";
+  errorMsg.value = "";
+
+  await nextTick();
+  scrollToBottom();
 };
 
-const toggleGallery = () => {
+const toggleGallery = async () => {
   isGalleryOn.value = true;
   isCameraOn.value = false;
+
+  responseMsg.value = "";
+  errorMsg.value = "";
+
+  await nextTick();
+  scrollToBottom();
 };
+
+function scrollToBottom() {
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "auto", // Use 'auto' for instant scrolling
+  });
+}
 
 /*** detection handling ***/
 
