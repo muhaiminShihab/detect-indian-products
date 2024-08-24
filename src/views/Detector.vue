@@ -1,38 +1,10 @@
 <template>
   <Header />
 
-  <div class="hero min-h-screen bg-base-200 px-2">
+  <div class="hero px-2 pt-10">
     <div class="container mx-auto">
-      <div class="flex justify-center gap-2">
-        <button @click="toggleCamera" class="btn btn-info">
-          Detect by Camera
-        </button>
-        <button @click="toggleGallery" class="btn btn-success">
-          Detect from Image
-        </button>
-      </div>
-
-      <div class="mt-16 max-w-lg mx-auto">
-        <div v-if="isCameraOn">
-          <label for="" class="font-bold">Scan Barcode:</label>
-          <p class="text-gray-500">Scan a barcode to detect the product.</p>
-          <StreamBarcodeReader
-            @decode="onDecode"
-            @loaded="onLoaded"
-          ></StreamBarcodeReader>
-        </div>
-
-        <div v-if="isGalleryOn">
-          <label for="" class="font-bold">Upload Image:</label>
-          <p class="text-gray-500">Upload an image to detect the barcode.</p>
-          <ImageBarcodeReader
-            @decode="onDecode"
-            @error="onError"
-            class="file-input file-input-bordered w-full"
-          ></ImageBarcodeReader>
-        </div>
-
-        <div role="alert" class="alert alert-success mt-4" v-if="responseMsg">
+      <div class="max-w-xl mx-auto">
+        <div role="alert" class="alert alert-warning mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-6 w-6 shrink-0 stroke-current"
@@ -43,27 +15,98 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
-          <span>{{ responseMsg }}</span>
+          <span
+            >Warning: We detect Indian products by identifying barcodes that
+            start with 890. A barcode with this prefix indicates the number was
+            originally issued by the Indian branch of GS1.</span
+          >
         </div>
 
-        <div role="alert" class="alert alert-error mt-4" v-if="errorMsg">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 shrink-0 stroke-current"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        <p class="mb-4 text-justify">
+          The buttons below are designed to assist you in detecting Indian
+          products quickly and efficiently. Our barcode scanner supports
+          multiple barcode formats commonly used for retail products. Simply use
+          the scanner to identify products by their barcode, and you'll be able
+          to determine if they are from India. Supported Barcode Formats:
+          {{ selectedBarcodeFormats }}.
+        </p>
+
+        <div class="md:flex justify-center gap-2">
+          <button @click="toggleCamera" class="btn btn-info text-white mb-2 w-full md:w-auto">
+            Detect by Camera
+          </button>
+          <button @click="toggleGallery" class="btn btn-success text-white mb-2 w-full md:w-auto">
+            Detect from Image
+          </button>
+        </div>
+
+        <div class="mt-16">
+          <div v-if="isCameraOn">
+            <label for="" class="font-bold">Scan Barcode:</label>
+            <p class="text-gray-500">Scan a barcode to detect the product.</p>
+
+            <QrcodeStream
+              :constraints="selectedConstraints"
+              :track="trackFunctionSelected.value"
+              :formats="selectedBarcodeFormats"
+              @error="onError"
+              @detect="onDetect"
+              @camera-on="onCameraReady"
+              class="rounded-lg overflow-hidden"
             />
-          </svg>
-          <span>{{ errorMsg }}</span>
+          </div>
+
+          <div v-if="isGalleryOn">
+            <label for="" class="font-bold">Upload Image:</label>
+            <p class="text-gray-500">Upload an image to detect the barcode.</p>
+
+            <QrcodeCapture
+              :constraints="selectedConstraints"
+              :track="trackFunctionSelected.value"
+              :formats="selectedBarcodeFormats"
+              @error="onError"
+              @detect="onDetect"
+              @camera-on="onCameraReady"
+              class="file-input file-input-bordered w-full"
+            />
+          </div>
+
+          <div role="alert" class="alert alert-success mt-4" v-if="responseMsg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 shrink-0 stroke-current"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>{{ responseMsg }}</span>
+          </div>
+
+          <div role="alert" class="alert alert-error mt-4" v-if="errorMsg">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 shrink-0 stroke-current"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>{{ errorMsg }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -71,10 +114,10 @@
 </template>
 
 <script setup>
-import { StreamBarcodeReader, ImageBarcodeReader } from "vue-barcode-reader";
+import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from "vue-qrcode-reader";
 import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import Header from "../components/Header.vue";
 
 const isCameraOn = ref(false);
@@ -98,21 +141,182 @@ const toggleGallery = () => {
   isCameraOn.value = false;
 };
 
-const onDecode = (result) => {
-  console.log("Decoded barcode:", result);
-  responseMsg.value = result;
+/*** detection handling ***/
+
+function onDetect(detectedCodes) {
+  console.log(detectedCodes);
+  //   responseMsg.value = JSON.stringify(detectedCodes.map((code) => code.rawValue));
+
+  if (detectedCodes.length == 0) {
+    responseMsg.value = "";
+    errorMsg.value = "No barcode detected.";
+    return;
+  }
+
+  let detectedCode =
+    detectedCodes.length > 0 ? detectedCodes[0].rawValue : null;
+
+  if (detectedCode) {
+    if (detectedCode.startsWith("890")) {
+      console.log("This is an Indian Product.");
+      responseMsg.value = `This is an Indian Product. Barcode: ${detectedCode}`;
+    } else {
+      console.log("This is not an Indian Product.");
+
+      errorMsg.value = "";
+      responseMsg.value = `This is not an Indian Product. Barcode: ${detectedCode}`;
+    }
+  } else {
+    console.log("No barcode detected.");
+
+    errorMsg.value = "";
+    responseMsg.value = "No barcode detected.";
+  }
+}
+
+/*** select camera ***/
+
+const selectedConstraints = ref({ facingMode: "environment" });
+const defaultConstraintOptions = [
+  { label: "rear camera", constraints: { facingMode: "environment" } },
+  { label: "front camera", constraints: { facingMode: "user" } },
+];
+const constraintOptions = ref(defaultConstraintOptions);
+
+async function onCameraReady() {
+  // NOTE: on iOS we can't invoke `enumerateDevices` before the user has given
+  // camera access permission. `QrcodeStream` internally takes care of
+  // requesting the permissions. The `camera-on` event should guarantee that this
+  // has happened.
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter(({ kind }) => kind === "videoinput");
+
+  constraintOptions.value = [
+    ...defaultConstraintOptions,
+    ...videoDevices.map(({ deviceId, label }) => ({
+      label: `${label} (ID: ${deviceId})`,
+      constraints: { deviceId },
+    })),
+  ];
+
   errorMsg.value = "";
-};
+}
 
-const onLoaded = () => {
-  // console.log("Barcode reader loaded");
-};
+/*** track functons ***/
 
-const onError = (error) => {
-  console.error("Error reading barcode:", error);
-  errorMsg.value = error;
-  responseMsg.value = "";
+function paintOutline(detectedCodes, ctx) {
+  for (const detectedCode of detectedCodes) {
+    const [firstPoint, ...otherPoints] = detectedCode.cornerPoints;
 
-  notify("Something went wrong. Please try again.", "error");
-};
+    ctx.strokeStyle = "red";
+
+    ctx.beginPath();
+    ctx.moveTo(firstPoint.x, firstPoint.y);
+    for (const { x, y } of otherPoints) {
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(firstPoint.x, firstPoint.y);
+    ctx.closePath();
+    ctx.stroke();
+  }
+}
+
+function paintBoundingBox(detectedCodes, ctx) {
+  for (const detectedCode of detectedCodes) {
+    const {
+      boundingBox: { x, y, width, height },
+    } = detectedCode;
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#007bff";
+    ctx.strokeRect(x, y, width, height);
+  }
+}
+
+function paintCenterText(detectedCodes, ctx) {
+  for (const detectedCode of detectedCodes) {
+    const { boundingBox, rawValue } = detectedCode;
+
+    const centerX = boundingBox.x + boundingBox.width / 2;
+    const centerY = boundingBox.y + boundingBox.height / 2;
+
+    const fontSize = Math.max(12, (50 * boundingBox.width) / ctx.canvas.width);
+
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = "center";
+
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#35495e";
+    ctx.strokeText(detectedCode.rawValue, centerX, centerY);
+
+    ctx.fillStyle = "#5cb984";
+    ctx.fillText(rawValue, centerX, centerY);
+  }
+}
+
+const trackFunctionOptions = [
+  { text: "nothing (default)", value: undefined },
+  { text: "outline", value: paintOutline },
+  { text: "centered text", value: paintCenterText },
+  { text: "bounding box", value: paintBoundingBox },
+];
+
+const trackFunctionSelected = ref(trackFunctionOptions[1]);
+
+/*** barcode formats ***/
+
+const barcodeFormats = ref({
+  aztec: false,
+  code_128: true, // Commonly used in logistics
+  code_39: true, // Commonly used in automotive and defense industries
+  code_93: true, // Compact version of Code 39
+  codabar: false,
+  databar: false, // Sometimes used for labeling fresh food items
+  databar_expanded: false,
+  data_matrix: false,
+  dx_film_edge: false,
+  ean_13: true, // Used for retail products (International Article Number)
+  ean_8: true, // Shorter version of EAN-13 for smaller packages
+  itf: true, // Interleaved 2 of 5, used in logistics
+  maxi_code: false,
+  micro_qr_code: false,
+  pdf417: false,
+  qr_code: false, // Common in QR codes but not typically for product barcodes
+  rm_qr_code: false,
+  upc_a: true, // Used for retail products in North America
+  upc_e: true, // Compact version of UPC-A
+  linear_codes: true, // General category for 1D barcodes used in products
+  matrix_codes: false, // General category for 2D barcodes, typically not used for product barcodes
+});
+
+const selectedBarcodeFormats = computed(() => {
+  return Object.keys(barcodeFormats.value).filter(
+    (format) => barcodeFormats.value[format]
+  );
+});
+
+/*** error handling ***/
+
+function onError(err) {
+  errorMsg.value = `[${err.name}]: `;
+
+  if (err.name === "NotAllowedError") {
+    errorMsg.value += "you need to grant camera access permission";
+  } else if (err.name === "NotFoundError") {
+    errorMsg.value += "no camera on this device";
+  } else if (err.name === "NotSupportedError") {
+    errorMsg.value += "secure context required (HTTPS, localhost)";
+  } else if (err.name === "NotReadableError") {
+    errorMsg.value += "is the camera already in use?";
+  } else if (err.name === "OverconstrainedError") {
+    errorMsg.value += "installed cameras are not suitable";
+  } else if (err.name === "StreamApiNotSupportedError") {
+    errorMsg.value += "Stream API is not supported in this browser";
+  } else if (err.name === "InsecureContextError") {
+    errorMsg.value +=
+      "Camera access is only permitted in secure context. Use HTTPS or localhost rather than HTTP.";
+  } else {
+    errorMsg.value = err.message;
+  }
+}
 </script>

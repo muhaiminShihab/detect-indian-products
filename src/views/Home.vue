@@ -4,7 +4,7 @@
   <div class="hero gradient min-h-screen">
     <div class="hero-content text-center">
       <div class="max-w-md">
-        <h1 class="text-5xl font-bold">Hi, Bangladeshi!</h1>
+        <h1 class="text-3xl md:text-5xl font-bold">Hi, Bangladeshi!</h1>
         <p class="py-6">
           This site will help you to detect Indian products. As a Bangladeshi
           person, you should boycot the Indian products.
