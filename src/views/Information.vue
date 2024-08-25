@@ -33,7 +33,7 @@
 
       <p>Barcode formats supported:</p>
       <div class="flex gap-3 flex-wrap">
-        <span class="border px-4 py-1 rounded-md hover:bg-black hover:text-white transition-all" v-for="format in selectedBarcodeFormats" :key="format">{{ format }}</span>
+        <span class="border px-4 py-1 rounded-md hover:bg-black hover:text-white transition-all cursor-pointer" v-for="format in selectedBarcodeFormats" :key="format">{{ format }}</span>
       </div>
     </div>
   </div>

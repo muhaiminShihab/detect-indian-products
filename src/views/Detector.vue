@@ -2,40 +2,11 @@
   <Header />
 
   <div class="px-3">
-    <div class="max-w-lg mx-auto mb-28">
-      <div v-if="isCameraOn" class="mt-4">
-        <label for="" class="font-bold">Scan Barcode:</label>
-        <p class="text-gray-500">Scan a barcode to detect the product.</p>
-
-        <QrcodeStream
-          :constraints="selectedConstraints"
-          :track="trackFunctionSelected.value"
-          :formats="selectedBarcodeFormats"
-          @error="onError"
-          @detect="onDetect"
-          @camera-on="onCameraReady"
-          class="rounded-lg overflow-hidden skeleton"
-        />
-      </div>
-
-      <div v-if="isGalleryOn" class="mt-4">
-        <label for="" class="font-bold">Upload Image:</label>
-        <p class="text-gray-500">Upload an image to detect the barcode.</p>
-
-        <QrcodeCapture
-          :constraints="selectedConstraints"
-          :track="trackFunctionSelected.value"
-          :formats="selectedBarcodeFormats"
-          @error="onError"
-          @detect="onDetect"
-          @camera-on="onCameraReady"
-          class="file-input file-input-bordered w-full"
-        />
-      </div>
-
+    <div class="max-w-lg mx-auto mb-28 flex flex-col">
       <!-- alerts -->
-      <div role="alert" class="alert alert-success my-4" v-if="responseMsg">
+      <div role="alert" class="alert my-4 md:order-2" :class="{ 'alert-warning': isIndianProduct, 'alert-info': !isIndianProduct }" v-if="responseMsg">
         <svg
+          v-if="!isIndianProduct"
           xmlns="http://www.w3.org/2000/svg"
           class="h-10 w-10 md:h-6 md:w-6 shrink-0 stroke-current"
           fill="none"
@@ -48,10 +19,24 @@
             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
+        <svg
+          v-if="isIndianProduct"
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-10 w-10 md:h-6 md:w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
         <span>{{ responseMsg }}</span>
       </div>
 
-      <div role="alert" class="alert alert-error my-4" v-if="errorMsg">
+      <div role="alert" class="alert alert-error my-4 md:order-2" v-if="errorMsg">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="-10 w-10 md:h-6 md:w-6 shrink-0 stroke-current"
@@ -68,8 +53,39 @@
         <span>{{ errorMsg }}</span>
       </div>
 
+      <!-- scanner -->
+      <div v-if="isCameraOn" class="mt-4 md:order-1">
+        <label for="" class="font-bold">Scan Barcode:</label>
+        <p class="text-gray-500">Scan a barcode to detect the product.</p>
+
+        <QrcodeStream
+          :constraints="selectedConstraints"
+          :track="trackFunctionSelected.value"
+          :formats="selectedBarcodeFormats"
+          @error="onError"
+          @detect="onDetect"
+          @camera-on="onCameraReady"
+          class="rounded-lg overflow-hidden skeleton"
+        />
+      </div>
+
+      <div v-if="isGalleryOn" class="mt-4 md:order-1">
+        <label for="" class="font-bold">Upload Image:</label>
+        <p class="text-gray-500">Upload an image to detect the barcode.</p>
+
+        <QrcodeCapture
+          :constraints="selectedConstraints"
+          :track="trackFunctionSelected.value"
+          :formats="selectedBarcodeFormats"
+          @error="onError"
+          @detect="onDetect"
+          @camera-on="onCameraReady"
+          class="file-input file-input-bordered w-full"
+        />
+      </div>
+
       <!-- scan options -->
-      <div class="flex justify-center gap-2 my-4">
+      <div class="flex justify-center gap-2 my-4 order-3">
         <button
           @click="toggleCamera"
           class="btn btn-info text-white mb-2 md:w-auto"
@@ -131,6 +147,7 @@ const isCameraOn = ref(true);
 const isGalleryOn = ref(false);
 const responseMsg = ref("");
 const errorMsg = ref("");
+const isIndianProduct = ref(false);
 
 const notify = (message, type) => {
   toast[type](message, {
@@ -170,7 +187,7 @@ function scrollToBottom() {
 /*** detection handling ***/
 
 function onDetect(detectedCodes) {
-  console.log(detectedCodes);
+  // console.log(detectedCodes);
   //   responseMsg.value = JSON.stringify(detectedCodes.map((code) => code.rawValue));
 
   if (detectedCodes.length == 0) {
@@ -184,18 +201,25 @@ function onDetect(detectedCodes) {
 
   if (detectedCode) {
     if (detectedCode.startsWith("890")) {
-      console.log("This is an Indian Product.");
-      responseMsg.value = `This is an Indian Product. Barcode: ${detectedCode}`;
-    } else {
-      console.log("This is not an Indian Product.");
+      // console.log("This is an Indian Product.");
 
       errorMsg.value = "";
+      isIndianProduct.value = true;
+      responseMsg.value = `This is an Indian Product. Barcode: ${detectedCode}`;
+      
+    } else {
+      // console.log("This is not an Indian Product.");
+
+      errorMsg.value = "";
+      isIndianProduct.value = false;
       responseMsg.value = `This is not an Indian Product. Barcode: ${detectedCode}`;
+      
     }
   } else {
-    console.log("No barcode detected.");
+    // console.log("No barcode detected.");
 
     errorMsg.value = "";
+    isIndianProduct.value = false;
     responseMsg.value = "No barcode detected.";
   }
 }
