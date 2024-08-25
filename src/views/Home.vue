@@ -1,8 +1,8 @@
 <template>
   <Header />
 
-  <div class="hero min-h-screen hero-bg">
-    <div class="hero-content text-center">
+  <div class="hero h-[90vh] hero-bg">
+    <div class="hero-content text-center mt-[-50px]">
       <div class="max-w-lg">
         <h1 class="text-3xl md:text-5xl font-bold">Hi, Bangladeshi!</h1>
         <p class="py-6 text-xl">
