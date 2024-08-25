@@ -1,12 +1,43 @@
 <template>
   <Header />
 
-  <div class="px-2 pt-10">
-    <div class="max-w-xl mx-auto">
-      <div role="alert" class="alert alert-warning mb-4">
+  <div class="px-3">
+    <div class="max-w-lg mx-auto mb-28">
+      <div v-if="isCameraOn" class="mt-4">
+        <label for="" class="font-bold">Scan Barcode:</label>
+        <p class="text-gray-500">Scan a barcode to detect the product.</p>
+
+        <QrcodeStream
+          :constraints="selectedConstraints"
+          :track="trackFunctionSelected.value"
+          :formats="selectedBarcodeFormats"
+          @error="onError"
+          @detect="onDetect"
+          @camera-on="onCameraReady"
+          class="rounded-lg overflow-hidden skeleton"
+        />
+      </div>
+
+      <div v-if="isGalleryOn" class="mt-4">
+        <label for="" class="font-bold">Upload Image:</label>
+        <p class="text-gray-500">Upload an image to detect the barcode.</p>
+
+        <QrcodeCapture
+          :constraints="selectedConstraints"
+          :track="trackFunctionSelected.value"
+          :formats="selectedBarcodeFormats"
+          @error="onError"
+          @detect="onDetect"
+          @camera-on="onCameraReady"
+          class="file-input file-input-bordered w-full"
+        />
+      </div>
+
+      <!-- alerts -->
+      <div role="alert" class="alert alert-success my-4" v-if="responseMsg">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6 shrink-0 stroke-current"
+          class="h-10 w-10 md:h-6 md:w-6 shrink-0 stroke-current"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -14,118 +45,89 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <span
-          >Warning: We detect Indian products by identifying barcodes that start
-          with 890. A barcode with this prefix indicates the number was
-          originally issued by the Indian branch of GS1.</span
-        >
+        <span>{{ responseMsg }}</span>
       </div>
 
-      <p class="mb-4 text-justify">
-        The buttons below are designed to assist you in detecting Indian
-        products quickly and efficiently. Our barcode scanner supports multiple
-        barcode formats commonly used for retail products. Simply use the
-        scanner to identify products by their barcode, and you'll be able to
-        determine if they are from India. Supported Barcode Formats:
-        {{ selectedBarcodeFormats }}.
-      </p>
+      <div role="alert" class="alert alert-error my-4" v-if="errorMsg">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="-10 w-10 md:h-6 md:w-6 shrink-0 stroke-current"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span>{{ errorMsg }}</span>
+      </div>
 
-      <div class="md:flex justify-center gap-2">
+      <!-- scan options -->
+      <div class="flex justify-center gap-2 my-4">
         <button
           @click="toggleCamera"
-          class="btn btn-info text-white mb-2 w-full md:w-auto"
+          class="btn btn-info text-white mb-2 md:w-auto"
         >
-          Detect by Camera
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="size-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
+            />
+          </svg>
         </button>
         <button
           @click="toggleGallery"
-          class="btn btn-success text-white mb-2 w-full md:w-auto"
+          class="btn btn-success text-white mb-2 md:w-auto"
         >
-          Detect from Image
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="size-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+            />
+          </svg>
         </button>
       </div>
-
-      <div class="mt-16">
-        <div v-if="isCameraOn">
-          <label for="" class="font-bold">Scan Barcode:</label>
-          <p class="text-gray-500">Scan a barcode to detect the product.</p>
-
-          <QrcodeStream
-            :constraints="selectedConstraints"
-            :track="trackFunctionSelected.value"
-            :formats="selectedBarcodeFormats"
-            @error="onError"
-            @detect="onDetect"
-            @camera-on="onCameraReady"
-            class="rounded-lg overflow-hidden"
-          />
-        </div>
-
-        <div v-if="isGalleryOn">
-          <label for="" class="font-bold">Upload Image:</label>
-          <p class="text-gray-500">Upload an image to detect the barcode.</p>
-
-          <QrcodeCapture
-            :constraints="selectedConstraints"
-            :track="trackFunctionSelected.value"
-            :formats="selectedBarcodeFormats"
-            @error="onError"
-            @detect="onDetect"
-            @camera-on="onCameraReady"
-            class="file-input file-input-bordered w-full"
-          />
-        </div>
-
-        <div role="alert" class="alert alert-success mt-4" v-if="responseMsg">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 shrink-0 stroke-current"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{{ responseMsg }}</span>
-        </div>
-
-        <div role="alert" class="alert alert-error mt-4" v-if="errorMsg">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 shrink-0 stroke-current"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{{ errorMsg }}</span>
-        </div>
-      </div>
-      <div class="mt-16"></div>
     </div>
   </div>
+
+  <!-- bottom nav -->
+  <BottomNav />
 </template>
 
 <script setup>
 import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from "vue-qrcode-reader";
-import { toast } from "vue3-toastify";
-import "vue3-toastify/dist/index.css";
-import { ref, nextTick, computed } from "vue";
+import { ref, computed } from "vue";
 import Header from "../components/Header.vue";
+import BottomNav from "../components/BottomNav.vue";
 
-const isCameraOn = ref(false);
+const isCameraOn = ref(true);
 const isGalleryOn = ref(false);
 const responseMsg = ref("");
 const errorMsg = ref("");
@@ -143,8 +145,8 @@ const toggleCamera = async () => {
   responseMsg.value = "";
   errorMsg.value = "";
 
-  await nextTick();
-  scrollToBottom();
+  // await nextTick();
+  // scrollToBottom();
 };
 
 const toggleGallery = async () => {
@@ -154,8 +156,8 @@ const toggleGallery = async () => {
   responseMsg.value = "";
   errorMsg.value = "";
 
-  await nextTick();
-  scrollToBottom();
+  // await nextTick();
+  // scrollToBottom();
 };
 
 function scrollToBottom() {
@@ -322,18 +324,18 @@ const selectedBarcodeFormats = computed(() => {
 /*** error handling ***/
 
 function onError(err) {
-  errorMsg.value = `[${err.name}]: `;
+  // errorMsg.value = `[${err.name}]: `;
 
   if (err.name === "NotAllowedError") {
-    errorMsg.value += "you need to grant camera access permission";
+    errorMsg.value += "You need to grant camera access permission";
   } else if (err.name === "NotFoundError") {
-    errorMsg.value += "no camera on this device";
+    errorMsg.value += "No camera found on this device";
   } else if (err.name === "NotSupportedError") {
-    errorMsg.value += "secure context required (HTTPS, localhost)";
+    errorMsg.value += "Secure context required (HTTPS, localhost)";
   } else if (err.name === "NotReadableError") {
-    errorMsg.value += "is the camera already in use?";
+    errorMsg.value += "Is the camera already in use?";
   } else if (err.name === "OverconstrainedError") {
-    errorMsg.value += "installed cameras are not suitable";
+    errorMsg.value += "Installed cameras are not suitable";
   } else if (err.name === "StreamApiNotSupportedError") {
     errorMsg.value += "Stream API is not supported in this browser";
   } else if (err.name === "InsecureContextError") {

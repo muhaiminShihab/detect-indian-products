@@ -1,5 +1,5 @@
 <template>
-  <div class="navbar bg-base-200">
+  <div class="navbar">
     <div class="flex-1">
       <a class="btn btn-ghost text-xl">Indian Product Detector</a>
     </div>
@@ -10,6 +10,9 @@
         </li>
         <li :class="isMenuActive('/detector')">
           <RouterLink to="/detector">Detector</RouterLink>
+        </li>
+        <li :class="isMenuActive('/information')">
+          <RouterLink to="/information">Information</RouterLink>
         </li>
         <li>
             <a href="https://indiaout.today" target="_blank">Indian Brands</a>
@@ -25,6 +28,12 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 
 const isMenuActive = (path) => {
-  return route.path === path ? "bg-gray-300 rounded-lg mx-1" : "";
+  return route.path === path ? "bg-gray-200 rounded-lg mx-1" : "";
 };
 </script>
+
+<style scoped>
+.navbar {
+  border-bottom: 1px solid #e5e7eb;
+}
+</style>

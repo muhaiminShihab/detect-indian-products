@@ -14,6 +14,11 @@ const router = createRouter({
       name: 'detector',
       component: () => import('../views/Detector.vue')
     },
+    {
+      path: '/information',
+      name: 'information',
+      component: () => import('../views/Information.vue')
+    },
   ]
 })
 
