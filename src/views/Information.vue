@@ -41,7 +41,7 @@
         >
       </div>
 
-      <div class="mt-16 border-t py-16">
+      <div class="mt-16 border-t pt-16">
         <h3 class="text-3xl font-bold mb-4">Developer Info:</h3>
         <div class="avatar my-4">
           <div class="w-32 rounded-md">
